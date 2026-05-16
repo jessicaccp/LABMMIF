@@ -65,6 +65,8 @@ If the LABMM database is empty, navigate to **http://localhost:4200/register**
 to create the first account. The first registration via the API is automatically
 granted super-admin privileges.
 
+> **Password requirement:** minimum 8 characters.
+
 After registering, you will be redirected to the lab dashboard.
 
 ---

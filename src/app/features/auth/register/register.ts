@@ -9,6 +9,7 @@ import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { extractApiError } from '../../../core/utils/api-error';
 
 @Component({
   selector: 'app-register',
@@ -51,7 +52,7 @@ export class Register {
     this.authService.register(this.form.getRawValue()).subscribe({
       next: () => this.router.navigate(['/labs']),
       error: (err: HttpErrorResponse) => {
-        this.error.set(err.error?.message ?? 'Registration failed. Please try again.');
+        this.error.set(extractApiError(err, 'Registration failed. Please try again.'));
         this.loading.set(false);
       },
     });

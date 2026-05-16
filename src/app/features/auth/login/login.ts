@@ -9,6 +9,7 @@ import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { extractApiError } from '../../../core/utils/api-error';
 
 @Component({
   selector: 'app-login',
@@ -50,7 +51,7 @@ export class Login {
     this.authService.login({ email, password }).subscribe({
       next: () => this.router.navigate(['/labs']),
       error: (err: HttpErrorResponse) => {
-        this.error.set(err.error?.message ?? 'Login failed. Please try again.');
+        this.error.set(extractApiError(err, 'Login failed. Please try again.'));
         this.loading.set(false);
       },
     });
