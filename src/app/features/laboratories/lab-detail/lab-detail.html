@@ -79,6 +79,15 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let m">
+                @if (canManage(m)) {
+                  <button
+                    mat-icon-button
+                    matTooltip="Edit member"
+                    (click)="openEditMember(m)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                }
                 @if (canManage(m) && m.member_id !== authService.currentUser()?.id) {
                   <button
                     mat-icon-button

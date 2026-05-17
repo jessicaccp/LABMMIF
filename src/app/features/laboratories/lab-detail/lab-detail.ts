@@ -44,6 +44,7 @@ import {
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { RoleBadge } from '../../../shared/components/role-badge/role-badge';
+import { EditMemberDialog, EditMemberData } from './edit-member-dialog';
 import { MemberFormDialog } from './member-form-dialog';
 import { ProjectFormDialog } from './project-form-dialog';
 import { ResearchFormDialog } from './research-form-dialog';
@@ -207,6 +208,25 @@ export class LabDetail implements OnInit {
     ref.afterClosed().subscribe(added => {
       if (added) {
         this.memberService.getLabMembers(this.labId).subscribe(m => this.members.set(m));
+      }
+    });
+  }
+
+  protected openEditMember(m: LabMembership): void {
+    const ref = this.dialog.open<EditMemberDialog, EditMemberData, LabMembership>(EditMemberDialog, {
+      width: '480px',
+      data: {
+        labId: this.labId,
+        membership: m,
+        requesterRoleLevel: this.isSuperAdmin() ? -1 : this.currentLevel(),
+      },
+    });
+    ref.afterClosed().subscribe(updated => {
+      if (updated) {
+        this.members.update(ms => ms.map(x =>
+          x.member_id === updated.member_id ? { ...x, ...updated } : x
+        ));
+        this.snackBar.open('Member updated', 'Dismiss', { duration: 2000 });
       }
     });
   }

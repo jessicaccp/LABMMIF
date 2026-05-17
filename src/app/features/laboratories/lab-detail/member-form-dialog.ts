@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButton } from '@angular/material/button';
@@ -15,8 +15,9 @@ import { MatOption } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
-import { CompensationType, LabRole, LAB_ROLE_LABELS, ROLE_LEVEL, Member } from '../../../core/models';
+import { CompensationType, Member } from '../../../core/models';
 import { MemberService } from '../../../core/services/member.service';
+import { RoleService } from '../../../core/services/role.service';
 
 export interface MemberFormData {
   labId: number;
@@ -41,10 +42,11 @@ export interface MemberFormData {
   ],
   templateUrl: './member-form-dialog.html',
 })
-export class MemberFormDialog {
+export class MemberFormDialog implements OnInit {
   readonly dialogRef = inject(MatDialogRef<MemberFormDialog>);
   readonly data = inject<MemberFormData>(MAT_DIALOG_DATA);
   private readonly memberService = inject(MemberService);
+  private readonly roleService = inject(RoleService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(false);
@@ -52,13 +54,7 @@ export class MemberFormDialog {
   protected readonly error = signal<string | null>(null);
   protected readonly foundMember = signal<Member | null>(null);
   protected readonly lookupError = signal<string | null>(null);
-
-  protected readonly roles = Object.entries(LAB_ROLE_LABELS)
-    .filter(([v]) => (ROLE_LEVEL[v as LabRole] ?? 99) > this.data.requesterRoleLevel)
-    .map(([value, label]) => ({
-      value: value as LabRole,
-      label,
-    }));
+  protected readonly roles = signal<{ value: string; label: string }[]>([]);
 
   protected readonly compensationTypes = [
     { value: CompensationType.PROJECT_SALARY, label: 'Project Salary' },
@@ -68,11 +64,25 @@ export class MemberFormDialog {
 
   protected readonly form = this.fb.nonNullable.group({
     cpf: ['', Validators.required],
-    role: [LabRole.STAFF as string, Validators.required],
+    role: ['' as string, Validators.required],
     specialization: ['' as string],
     compensation_type: ['' as string],
     compensation_value: [null as number | null],
   });
+
+  ngOnInit(): void {
+    this.roleService.list().subscribe({
+      next: all => {
+        const filtered = all
+          .filter(r => r.level > this.data.requesterRoleLevel)
+          .map(r => ({ value: r.key, label: r.name }));
+        this.roles.set(filtered);
+        if (filtered.length) {
+          this.form.get('role')!.setValue(filtered[filtered.length - 1].value);
+        }
+      },
+    });
+  }
 
   protected onCpfInput(event: Event): void {
     const input = event.target as HTMLInputElement;

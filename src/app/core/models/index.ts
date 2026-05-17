@@ -72,6 +72,14 @@ export const ROLE_LEVEL: Record<LabRole, number> = {
 
 // ─── Entities ─────────────────────────────────────────────────────────────────
 
+export interface RoleDefinition {
+  id: number;
+  key: string;
+  name: string;
+  level: number;
+  is_system: boolean;
+}
+
 export interface Member {
   id: number;
   first_name: string;

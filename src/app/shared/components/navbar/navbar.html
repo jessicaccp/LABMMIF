@@ -16,6 +16,11 @@
         <mat-icon>pending_actions</mat-icon>
       </a>
     }
+    @if (authService.currentUser()?.is_super_admin) {
+      <a mat-icon-button routerLink="/admin/roles" aria-label="Manage roles">
+        <mat-icon>manage_accounts</mat-icon>
+      </a>
+    }
     <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="User menu">
       <mat-icon>account_circle</mat-icon>
     </button>
@@ -33,6 +38,12 @@
         <a mat-menu-item routerLink="/admin/pending">
           <mat-icon>pending_actions</mat-icon>
           Pending Approvals
+        </a>
+      }
+      @if (authService.currentUser()?.is_super_admin) {
+        <a mat-menu-item routerLink="/admin/roles">
+          <mat-icon>manage_accounts</mat-icon>
+          Manage Roles
         </a>
       }
       <button mat-menu-item (click)="authService.logout()">

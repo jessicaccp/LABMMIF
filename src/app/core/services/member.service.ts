@@ -14,6 +14,7 @@ export interface AddMemberPayload {
 
 export interface UpdateMembershipPayload {
   role?: string;
+  specialization?: string | null;
   compensation_type?: string | null;
   compensation_value?: number | null;
 }

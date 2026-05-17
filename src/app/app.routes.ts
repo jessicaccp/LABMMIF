@@ -68,5 +68,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/admin/pending-members/pending-members').then(m => m.PendingMembers),
   },
+  {
+    path: 'admin/roles',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/admin/roles/roles-admin').then(m => m.RolesAdmin),
+  },
   { path: '**', redirectTo: '/labs' },
 ];
