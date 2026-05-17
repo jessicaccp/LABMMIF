@@ -202,7 +202,7 @@ export class LabDetail implements OnInit {
   protected openAddMember(): void {
     const ref = this.dialog.open(MemberFormDialog, {
       width: '520px',
-      data: { labId: this.labId, requesterRoleLevel: this.currentLevel() },
+      data: { labId: this.labId, requesterRoleLevel: this.isSuperAdmin() ? -1 : this.currentLevel() },
     });
     ref.afterClosed().subscribe(added => {
       if (added) {
