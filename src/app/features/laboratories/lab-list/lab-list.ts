@@ -1,11 +1,13 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
+import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltip } from '@angular/material/tooltip';
 
 import { Laboratory } from '../../../core/models';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -22,8 +24,11 @@ import { LabFormDialog } from './lab-form-dialog';
     MatCardContent,
     MatCardActions,
     MatButton,
+    MatChip,
     MatIcon,
+    MatIconButton,
     MatProgressSpinner,
+    MatTooltip,
   ],
   templateUrl: './lab-list.html',
   styleUrl: './lab-list.scss',
@@ -31,6 +36,17 @@ import { LabFormDialog } from './lab-form-dialog';
 export class LabList implements OnInit {
   protected readonly labs = signal<Laboratory[]>([]);
   protected readonly loading = signal(true);
+  protected readonly toggling = signal<Set<number>>(new Set());
+
+  protected readonly myLabIds = computed(() =>
+    new Set((this.authService.currentUser()?.lab_memberships ?? []).map(m => m.lab_id))
+  );
+  protected readonly myLabs = computed(() =>
+    this.labs().filter(l => this.myLabIds().has(l.id))
+  );
+  protected readonly otherLabs = computed(() =>
+    this.labs().filter(l => !this.myLabIds().has(l.id))
+  );
 
   protected readonly authService = inject(AuthService);
   private readonly labService = inject(LaboratoryService);
@@ -59,6 +75,23 @@ export class LabList implements OnInit {
     const ref = this.dialog.open(LabFormDialog, { width: '480px' });
     ref.afterClosed().subscribe(created => {
       if (created) this.load();
+    });
+  }
+
+  protected toggleActive(lab: Laboratory, event: Event): void {
+    event.stopPropagation();
+    this.toggling.update(s => { const n = new Set(s); n.add(lab.id); return n; });
+    const call = lab.is_active ? this.labService.deactivate(lab.id) : this.labService.activate(lab.id);
+    call.subscribe({
+      next: updated => {
+        this.labs.update(list => list.map(l => l.id === lab.id ? updated : l));
+        this.toggling.update(s => { const n = new Set(s); n.delete(lab.id); return n; });
+        this.snackBar.open(`${lab.name} ${updated.is_active ? 'activated' : 'deactivated'}.`, 'Dismiss', { duration: 3000 });
+      },
+      error: () => {
+        this.toggling.update(s => { const n = new Set(s); n.delete(lab.id); return n; });
+        this.snackBar.open('Failed to update laboratory status.', 'Dismiss', { duration: 3000 });
+      },
     });
   }
 }

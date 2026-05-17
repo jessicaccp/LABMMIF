@@ -7,10 +7,11 @@ const ROLE_COLOR: Record<LabRole, string> = {
   [LabRole.CEO]: 'role-ceo',
   [LabRole.ENGINEERING_MANAGER]: 'role-manager',
   [LabRole.PROJECT_MANAGER]: 'role-manager',
-  [LabRole.RESEARCH_MANAGER]: 'role-manager',
+  [LabRole.CHIEF_SCIENTIST]: 'role-scientist',
   [LabRole.TECH_LEAD]: 'role-lead',
   [LabRole.ENGINEER]: 'role-member',
   [LabRole.RESEARCHER]: 'role-member',
+  [LabRole.RESEARCH_FELLOW]: 'role-fellow',
   [LabRole.STAFF]: 'role-staff',
 };
 

@@ -9,13 +9,13 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatOption } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
-import { CompensationType, LabRole, LAB_ROLE_LABELS } from '../../../core/models';
+import { CompensationType, LabRole, LAB_ROLE_LABELS, Member } from '../../../core/models';
 import { MemberService } from '../../../core/services/member.service';
 
 export interface MemberFormData {
@@ -32,7 +32,7 @@ export interface MemberFormData {
     MatDialogActions,
     MatFormField,
     MatLabel,
-    MatError,
+    MatHint,
     MatInput,
     MatSelect,
     MatOption,
@@ -47,7 +47,10 @@ export class MemberFormDialog {
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(false);
+  protected readonly lookupLoading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly foundMember = signal<Member | null>(null);
+  protected readonly lookupError = signal<string | null>(null);
 
   protected readonly roles = Object.entries(LAB_ROLE_LABELS).map(([value, label]) => ({
     value: value as LabRole,
@@ -57,25 +60,65 @@ export class MemberFormDialog {
   protected readonly compensationTypes = [
     { value: CompensationType.PROJECT_SALARY, label: 'Project Salary' },
     { value: CompensationType.RESEARCH_GRANT, label: 'Research Grant' },
+    { value: CompensationType.VOLUNTEER, label: 'Volunteer' },
   ];
 
   protected readonly form = this.fb.nonNullable.group({
-    member_id: [0, [Validators.required, Validators.min(1)]],
+    cpf: ['', Validators.required],
     role: [LabRole.STAFF as string, Validators.required],
+    specialization: ['' as string],
     compensation_type: ['' as string],
     compensation_value: [null as number | null],
   });
 
+  protected onCpfInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 11);
+    let formatted = digits;
+    if (digits.length > 9) {
+      formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+    } else if (digits.length > 6) {
+      formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    } else if (digits.length > 3) {
+      formatted = `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    }
+    input.value = formatted;
+    this.form.get('cpf')!.setValue(formatted, { emitEvent: false });
+    this.foundMember.set(null);
+    this.lookupError.set(null);
+    if (digits.length === 11) {
+      this.lookupMember(digits);
+    }
+  }
+
+  private lookupMember(cpf: string): void {
+    this.lookupLoading.set(true);
+    this.memberService.lookupByCpf(cpf).subscribe({
+      next: member => {
+        this.foundMember.set(member);
+        this.lookupError.set(null);
+        this.lookupLoading.set(false);
+      },
+      error: () => {
+        this.foundMember.set(null);
+        this.lookupError.set('No member found with this CPF. Create their account first via the Register page.');
+        this.lookupLoading.set(false);
+      },
+    });
+  }
+
   protected submit(): void {
-    if (this.form.invalid) return;
+    const member = this.foundMember();
+    if (!member || this.form.invalid) return;
     this.loading.set(true);
     this.error.set(null);
-    const { member_id, role, compensation_type, compensation_value } =
+    const { role, specialization, compensation_type, compensation_value } =
       this.form.getRawValue();
     this.memberService
       .addMember(this.data.labId, {
-        member_id,
+        member_id: member.id,
         role,
+        ...(specialization && { specialization }),
         ...(compensation_type && { compensation_type }),
         ...(compensation_value != null && { compensation_value }),
       })

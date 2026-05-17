@@ -23,6 +23,10 @@ export class MemberService {
   private readonly http = inject(HttpClient);
   private readonly api = environment.apiUrl;
 
+  getMemberById(memberId: number): Observable<Member> {
+    return this.http.get<Member>(`${this.api}/members/${memberId}`);
+  }
+
   getLabMembers(labId: number): Observable<LabMembership[]> {
     return this.http.get<LabMembership[]>(`${this.api}/labs/${labId}/members`);
   }
@@ -59,5 +63,31 @@ export class MemberService {
     data: Partial<{ first_name: string; last_name: string; password: string }>,
   ): Observable<Member> {
     return this.http.put<Member>(`${this.api}/members/${memberId}`, data);
+  }
+
+  lookupByCpf(cpf: string): Observable<Member> {
+    return this.http.get<Member>(`${this.api}/members/lookup`, {
+      params: { cpf },
+    });
+  }
+
+  getPendingMembers(): Observable<Member[]> {
+    return this.http.get<Member[]>(`${this.api}/members/pending`);
+  }
+
+  getAllMembers(): Observable<Member[]> {
+    return this.http.get<Member[]>(`${this.api}/members`);
+  }
+
+  approveMember(memberId: number): Observable<Member> {
+    return this.http.post<Member>(`${this.api}/members/${memberId}/approve`, {});
+  }
+
+  deactivateMember(memberId: number): Observable<Member> {
+    return this.http.post<Member>(`${this.api}/members/${memberId}/deactivate`, {});
+  }
+
+  activateMember(memberId: number): Observable<Member> {
+    return this.http.post<Member>(`${this.api}/members/${memberId}/activate`, {});
   }
 }

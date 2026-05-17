@@ -1,7 +1,7 @@
 <div class="page-container">
   <div class="page-header">
     <h1>Laboratories</h1>
-    @if (authService.currentUser()?.is_super_admin) {
+    @if (authService.currentUser()?.is_super_admin || authService.currentUser()?.is_professor) {
       <button mat-raised-button color="primary" (click)="openCreate()">
         <mat-icon>add</mat-icon>
         New Laboratory
@@ -16,20 +16,83 @@
   } @else if (labs().length === 0) {
     <p class="empty-state">No laboratories found.</p>
   } @else {
-    <div class="lab-grid">
-      @for (lab of labs(); track lab.id) {
-        <mat-card class="lab-card" [routerLink]="['/labs', lab.id]">
-          <mat-card-header>
-            <mat-card-title>{{ lab.name }}</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p>{{ lab.description || 'No description provided.' }}</p>
-          </mat-card-content>
-          <mat-card-actions>
-            <button mat-button color="primary">Open</button>
-          </mat-card-actions>
-        </mat-card>
-      }
-    </div>
+    @if (myLabs().length > 0) {
+      <h2 class="section-title">My Labs</h2>
+      <div class="lab-grid">
+        @for (lab of myLabs(); track lab.id) {
+          <mat-card class="lab-card" [class.lab-inactive]="!lab.is_active" [routerLink]="['/labs', lab.id]">
+            <mat-card-header>
+              <mat-card-title>
+                {{ lab.name }}
+                <mat-chip class="chip-member" disableRipple>Member</mat-chip>
+                @if (!lab.is_active) {
+                  <mat-chip class="chip-inactive" disableRipple>Inactive</mat-chip>
+                }
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p>{{ lab.description || 'No description provided.' }}</p>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-button color="primary">Open</button>
+              @if (authService.currentUser()?.is_super_admin) {
+                <button
+                  mat-icon-button
+                  [color]="lab.is_active ? 'warn' : 'primary'"
+                  [matTooltip]="lab.is_active ? 'Deactivate lab' : 'Activate lab'"
+                  (click)="toggleActive(lab, $event)"
+                  [disabled]="toggling().has(lab.id)"
+                >
+                  @if (toggling().has(lab.id)) {
+                    <mat-progress-spinner diameter="18" mode="indeterminate" />
+                  } @else {
+                    <mat-icon>{{ lab.is_active ? 'block' : 'check_circle' }}</mat-icon>
+                  }
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
+
+    @if (otherLabs().length > 0) {
+      <h2 class="section-title">{{ myLabs().length > 0 ? 'Other Laboratories' : 'Laboratories' }}</h2>
+      <div class="lab-grid">
+        @for (lab of otherLabs(); track lab.id) {
+          <mat-card class="lab-card" [class.lab-inactive]="!lab.is_active" [routerLink]="['/labs', lab.id]">
+            <mat-card-header>
+              <mat-card-title>
+                {{ lab.name }}
+                @if (!lab.is_active) {
+                  <mat-chip class="chip-inactive" disableRipple>Inactive</mat-chip>
+                }
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p>{{ lab.description || 'No description provided.' }}</p>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-button color="primary">Open</button>
+              @if (authService.currentUser()?.is_super_admin) {
+                <button
+                  mat-icon-button
+                  [color]="lab.is_active ? 'warn' : 'primary'"
+                  [matTooltip]="lab.is_active ? 'Deactivate lab' : 'Activate lab'"
+                  (click)="toggleActive(lab, $event)"
+                  [disabled]="toggling().has(lab.id)"
+                >
+                  @if (toggling().has(lab.id)) {
+                    <mat-progress-spinner diameter="18" mode="indeterminate" />
+                  } @else {
+                    <mat-icon>{{ lab.is_active ? 'block' : 'check_circle' }}</mat-icon>
+                  }
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
   }
 </div>

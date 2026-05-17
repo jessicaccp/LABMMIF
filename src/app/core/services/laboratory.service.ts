@@ -14,6 +14,10 @@ export class LaboratoryService {
     return this.http.get<Laboratory[]>(`${this.api}/labs`);
   }
 
+  getDirectory(): Observable<{ id: number; name: string }[]> {
+    return this.http.get<{ id: number; name: string }[]>(`${this.api}/labs/directory`);
+  }
+
   getById(id: number): Observable<Laboratory> {
     return this.http.get<Laboratory>(`${this.api}/labs/${id}`);
   }
@@ -31,5 +35,13 @@ export class LaboratoryService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.api}/labs/${id}`);
+  }
+
+  deactivate(id: number): Observable<Laboratory> {
+    return this.http.post<Laboratory>(`${this.api}/labs/${id}/deactivate`, {});
+  }
+
+  activate(id: number): Observable<Laboratory> {
+    return this.http.post<Laboratory>(`${this.api}/labs/${id}/activate`, {});
   }
 }

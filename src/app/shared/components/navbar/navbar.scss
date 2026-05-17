@@ -2,10 +2,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font-mono);
   text-decoration: none;
   color: inherit;
+  letter-spacing: 0.05em;
 }
 
 .spacer {
@@ -16,6 +18,7 @@
   padding: 8px 16px;
   font-weight: 500;
   font-size: 14px;
-  color: rgba(0, 0, 0, 0.6);
+  font-family: var(--font-mono);
+  color: var(--mat-sys-on-surface-variant);
   pointer-events: none;
 }

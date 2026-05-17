@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
@@ -23,7 +23,9 @@ import {
 } from '@angular/material/table';
 import { MatTooltip } from '@angular/material/tooltip';
 
-import { Member, Research } from '../../../core/models';
+import { LabMembership, LabRole, Member, Research } from '../../../core/models';
+import { AuthService } from '../../../core/auth/auth.service';
+import { MemberService } from '../../../core/services/member.service';
 import { ResearchService } from '../../../core/services/research.service';
 import {
   ConfirmDialog,
@@ -62,9 +64,12 @@ export class ResearchDetail implements OnInit {
   protected readonly research = signal<Research | null>(null);
   protected readonly loading = signal(true);
   protected readonly addMemberId = signal('');
+  protected readonly currentMembership = signal<LabMembership | null>(null);
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  protected readonly authService = inject(AuthService);
+  private readonly memberService = inject(MemberService);
   private readonly researchService = inject(ResearchService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -74,10 +79,24 @@ export class ResearchDetail implements OnInit {
 
   readonly memberColumns = ['name', 'email', 'actions'];
 
+  protected readonly canManageMembers = computed(() => {
+    if (this.authService.currentUser()?.is_super_admin) return true;
+    const m = this.currentMembership();
+    return m ? (m.role === LabRole.CEO || m.role === LabRole.CHIEF_SCIENTIST) : false;
+  });
+
   ngOnInit(): void {
     this.labId = Number(this.route.snapshot.paramMap.get('labId'));
     this.researchId = Number(this.route.snapshot.paramMap.get('researchId'));
     this.load();
+    this.memberService.getLabMembers(this.labId).subscribe({
+      next: memberships => {
+        const userId = this.authService.currentUser()?.id;
+        if (userId) {
+          this.currentMembership.set(memberships.find(m => m.member_id === userId) ?? null);
+        }
+      },
+    });
   }
 
   protected load(): void {

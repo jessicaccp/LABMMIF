@@ -15,6 +15,20 @@
       <textarea matInput formControlName="description" rows="3"></textarea>
     </mat-form-field>
 
+    @if (data.labMembers.length > 0) {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Area Manager (optional)</mat-label>
+        <mat-select formControlName="manager_id">
+          <mat-option [value]="null">None</mat-option>
+          @for (m of data.labMembers; track m.member_id) {
+            <mat-option [value]="m.member_id">
+              {{ m.member?.first_name }} {{ m.member?.last_name }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }

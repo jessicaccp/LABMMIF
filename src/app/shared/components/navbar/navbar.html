@@ -6,7 +6,16 @@
 
   <span class="spacer"></span>
 
+  <button mat-icon-button (click)="toggleTheme()" [attr.aria-label]="isDark() ? 'Switch to light theme' : 'Switch to dark theme'">
+    <mat-icon>{{ isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+  </button>
+
   @if (authService.isAuthenticated()) {
+    @if (authService.currentUser()?.is_professor || authService.currentUser()?.is_super_admin) {
+      <a mat-icon-button routerLink="/admin/pending" aria-label="Pending approvals">
+        <mat-icon>pending_actions</mat-icon>
+      </a>
+    }
     <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="User menu">
       <mat-icon>account_circle</mat-icon>
     </button>
@@ -20,6 +29,12 @@
         <mat-icon>person</mat-icon>
         Profile
       </a>
+      @if (authService.currentUser()?.is_professor || authService.currentUser()?.is_super_admin) {
+        <a mat-menu-item routerLink="/admin/pending">
+          <mat-icon>pending_actions</mat-icon>
+          Pending Approvals
+        </a>
+      }
       <button mat-menu-item (click)="authService.logout()">
         <mat-icon>logout</mat-icon>
         Logout

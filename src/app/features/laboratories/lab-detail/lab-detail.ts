@@ -25,6 +25,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import {
   Article,
   LabMembership,
+  LabRole,
   MANAGER_ROLES,
   Project,
   Research,
@@ -84,8 +85,6 @@ export class LabDetail implements OnInit {
   protected readonly research = signal<Research[]>([]);
   protected readonly articles = signal<Article[]>([]);
   protected readonly loading = signal(true);
-  protected readonly currentMembership = signal<LabMembership | null>(null);
-
   protected readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -102,6 +101,24 @@ export class LabDetail implements OnInit {
   protected readonly isSuperAdmin = computed(
     () => this.authService.currentUser()?.is_super_admin ?? false,
   );
+
+  protected readonly currentMembership = computed(() => {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) return null;
+    return this.members().find(m => m.member_id === userId) ?? null;
+  });
+
+  protected readonly isCeo = computed(() => {
+    if (this.isSuperAdmin()) return true;
+    const m = this.currentMembership();
+    return m?.role === LabRole.CEO;
+  });
+
+  protected readonly isChiefScientist = computed(() => {
+    if (this.isSuperAdmin()) return true;
+    const m = this.currentMembership();
+    return m ? (m.role === LabRole.CEO || m.role === LabRole.CHIEF_SCIENTIST) : false;
+  });
 
   protected readonly isManager = computed(() => {
     if (this.isSuperAdmin()) return true;
@@ -121,7 +138,7 @@ export class LabDetail implements OnInit {
     return m ? RESEARCHER_AND_ABOVE.includes(m.role) : false;
   });
 
-  readonly memberColumns = ['name', 'email', 'role', 'compensation', 'actions'];
+  readonly memberColumns = ['name', 'email', 'role', 'specialization', 'compensation', 'actions'];
   readonly projectColumns = ['name', 'status', 'start_date', 'end_date', 'actions'];
   readonly researchColumns = ['name', 'description', 'members', 'actions'];
   readonly articleColumns = ['title', 'journal', 'doi', 'published_at', 'authors', 'actions'];
@@ -148,10 +165,6 @@ export class LabDetail implements OnInit {
     this.memberService.getLabMembers(this.labId).subscribe({
       next: members => {
         this.members.set(members);
-        const userId = this.authService.currentUser()?.id;
-        if (userId) {
-          this.currentMembership.set(members.find(m => m.member_id === userId) ?? null);
-        }
       },
     });
 
@@ -201,9 +214,10 @@ export class LabDetail implements OnInit {
   // ─── Projects ──────────────────────────────────────────────────────────────
 
   protected openAddProject(): void {
+    const techLeads = this.members().filter(m => m.role === LabRole.TECH_LEAD);
     const ref = this.dialog.open(ProjectFormDialog, {
       width: '520px',
-      data: { labId: this.labId, research: this.research() },
+      data: { labId: this.labId, research: this.research(), techLeads },
     });
     ref.afterClosed().subscribe(created => {
       if (created) {
@@ -228,12 +242,28 @@ export class LabDetail implements OnInit {
     });
   }
 
+  protected toggleProject(project: Project): void {
+    const call = project.is_active
+      ? this.projectService.deactivate(this.labId, project.id)
+      : this.projectService.activate(this.labId, project.id);
+    call.subscribe({
+      next: updated => {
+        this.projects.update(ps => ps.map(p => p.id === project.id ? updated : p));
+        this.snackBar.open(`Project ${updated.is_active ? 'activated' : 'deactivated'}.`, 'Dismiss', { duration: 2000 });
+      },
+      error: () => this.snackBar.open('Failed to update project status.', 'Dismiss', { duration: 3000 }),
+    });
+  }
+
   // ─── Research ──────────────────────────────────────────────────────────────
 
   protected openAddResearch(): void {
+    const chiefScientists = this.members().filter(
+      m => m.role === LabRole.CHIEF_SCIENTIST || m.role === LabRole.CEO
+    );
     const ref = this.dialog.open(ResearchFormDialog, {
       width: '480px',
-      data: { labId: this.labId },
+      data: { labId: this.labId, labMembers: chiefScientists },
     });
     ref.afterClosed().subscribe(created => {
       if (created) {
@@ -258,6 +288,19 @@ export class LabDetail implements OnInit {
     });
   }
 
+  protected toggleResearch(group: Research): void {
+    const call = group.is_active
+      ? this.researchService.deactivate(this.labId, group.id)
+      : this.researchService.activate(this.labId, group.id);
+    call.subscribe({
+      next: updated => {
+        this.research.update(rs => rs.map(r => r.id === group.id ? updated : r));
+        this.snackBar.open(`Research group ${updated.is_active ? 'activated' : 'deactivated'}.`, 'Dismiss', { duration: 2000 });
+      },
+      error: () => this.snackBar.open('Failed to update research group status.', 'Dismiss', { duration: 3000 }),
+    });
+  }
+
   // ─── Articles ──────────────────────────────────────────────────────────────
 
   protected deleteArticle(articleId: number, title: string): void {
@@ -273,6 +316,19 @@ export class LabDetail implements OnInit {
         },
         error: () => this.snackBar.open('Failed to delete article', 'Dismiss', { duration: 3000 }),
       });
+    });
+  }
+
+  protected toggleArticle(article: Article): void {
+    const call = article.is_active
+      ? this.articleService.deactivate(this.labId, article.id)
+      : this.articleService.activate(this.labId, article.id);
+    call.subscribe({
+      next: updated => {
+        this.articles.update(as => as.map(a => a.id === article.id ? updated : a));
+        this.snackBar.open(`Article ${updated.is_active ? 'activated' : 'deactivated'}.`, 'Dismiss', { duration: 2000 });
+      },
+      error: () => this.snackBar.open('Failed to update article status.', 'Dismiss', { duration: 3000 }),
     });
   }
 

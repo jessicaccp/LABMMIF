@@ -35,8 +35,8 @@ export class AuthService {
       .post<AuthResponse>(`${this.api}/auth/login`, credentials)
       .pipe(
         tap(res => {
-          localStorage.setItem('access_token', res.access_token);
-          localStorage.setItem('refresh_token', res.refresh_token);
+          localStorage.setItem('access_token', res.access_token ?? '');
+          localStorage.setItem('refresh_token', res.refresh_token ?? '');
           this.currentUser.set(res.member);
         }),
       );
@@ -47,9 +47,12 @@ export class AuthService {
       .post<AuthResponse>(`${this.api}/auth/register`, data)
       .pipe(
         tap(res => {
-          localStorage.setItem('access_token', res.access_token);
-          localStorage.setItem('refresh_token', res.refresh_token);
-          this.currentUser.set(res.member);
+          // Only take over the session when tokens are present (bootstrap or admin-created)
+          if (res.access_token && !this.isAuthenticated()) {
+            localStorage.setItem('access_token', res.access_token);
+            localStorage.setItem('refresh_token', res.refresh_token ?? '');
+            this.currentUser.set(res.member);
+          }
         }),
       );
   }

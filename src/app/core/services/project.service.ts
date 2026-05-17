@@ -7,6 +7,7 @@ import { Project } from '../models';
 
 export interface CreateProjectPayload {
   name: string;
+  tech_lead_id?: number | null;
   description?: string;
   status?: string;
   start_date?: string;
@@ -60,6 +61,18 @@ export class ProjectService {
   removeMember(labId: number, projectId: number, memberId: number): Observable<void> {
     return this.http.delete<void>(
       `${this.api}/labs/${labId}/projects/${projectId}/members/${memberId}`,
+    );
+  }
+
+  deactivate(labId: number, projectId: number): Observable<Project> {
+    return this.http.post<Project>(
+      `${this.api}/labs/${labId}/projects/${projectId}/deactivate`, {},
+    );
+  }
+
+  activate(labId: number, projectId: number): Observable<Project> {
+    return this.http.post<Project>(
+      `${this.api}/labs/${labId}/projects/${projectId}/activate`, {},
     );
   }
 }

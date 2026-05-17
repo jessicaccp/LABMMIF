@@ -58,4 +58,16 @@ export class ResearchService {
       `${this.api}/labs/${labId}/research/${researchId}/members/${memberId}`,
     );
   }
+
+  deactivate(labId: number, researchId: number): Observable<Research> {
+    return this.http.post<Research>(
+      `${this.api}/labs/${labId}/research/${researchId}/deactivate`, {},
+    );
+  }
+
+  activate(labId: number, researchId: number): Observable<Research> {
+    return this.http.post<Research>(
+      `${this.api}/labs/${labId}/research/${researchId}/activate`, {},
+    );
+  }
 }

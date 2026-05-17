@@ -11,12 +11,16 @@ import {
 } from '@angular/material/dialog';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { MatOption } from '@angular/material/core';
+import { MatSelect } from '@angular/material/select';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
+import { LabMembership } from '../../../core/models';
 import { ResearchService } from '../../../core/services/research.service';
 
 export interface ResearchFormData {
   labId: number;
+  labMembers: LabMembership[];
 }
 
 @Component({
@@ -31,6 +35,8 @@ export interface ResearchFormData {
     MatLabel,
     MatError,
     MatInput,
+    MatSelect,
+    MatOption,
     MatProgressSpinner,
   ],
   templateUrl: './research-form-dialog.html',
@@ -47,15 +53,20 @@ export class ResearchFormDialog {
   protected readonly form = this.fb.nonNullable.group({
     name: ['', Validators.required],
     description: [''],
+    manager_id: [null as number | null],
   });
 
   protected submit(): void {
     if (this.form.invalid) return;
     this.loading.set(true);
     this.error.set(null);
-    const { name, description } = this.form.getRawValue();
+    const { name, description, manager_id } = this.form.getRawValue();
     this.researchService
-      .create(this.data.labId, { name, ...(description && { description }) })
+      .create(this.data.labId, {
+        name,
+        ...(description && { description }),
+        ...(manager_id != null && { manager_id }),
+      })
       .subscribe({
         next: research => this.dialogRef.close(research),
         error: (err: HttpErrorResponse) => {

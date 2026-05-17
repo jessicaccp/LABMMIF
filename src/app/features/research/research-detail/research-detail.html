@@ -12,18 +12,27 @@
     <h1>{{ research()!.name }}</h1>
     <p class="description">{{ research()!.description || 'No description.' }}</p>
 
+    @if (research()!.manager) {
+      <p class="manager-info">
+        <strong>Area Manager:</strong>
+        {{ research()!.manager!.first_name }} {{ research()!.manager!.last_name }}
+      </p>
+    }
+
     <h2>Members</h2>
 
-    <div class="add-member-row">
-      <mat-form-field appearance="outline">
-        <mat-label>Member ID</mat-label>
-        <input matInput type="number" [(ngModel)]="addMemberId" placeholder="Enter member ID" />
-      </mat-form-field>
-      <button mat-raised-button color="primary" (click)="addMember()" [disabled]="!addMemberId()">
-        <mat-icon>person_add</mat-icon>
-        Add
-      </button>
-    </div>
+    @if (canManageMembers()) {
+      <div class="add-member-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Member ID</mat-label>
+          <input matInput type="number" [(ngModel)]="addMemberId" placeholder="Enter member ID" />
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="addMember()" [disabled]="!addMemberId()">
+          <mat-icon>person_add</mat-icon>
+          Add
+        </button>
+      </div>
+    }
 
     <table mat-table [dataSource]="research()!.members ?? []" class="full-width">
       <ng-container matColumnDef="name">
@@ -39,9 +48,11 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let m">
-          <button mat-icon-button color="warn" matTooltip="Remove" (click)="removeMember(m)">
-            <mat-icon>person_remove</mat-icon>
-          </button>
+          @if (canManageMembers()) {
+            <button mat-icon-button color="warn" matTooltip="Remove" (click)="removeMember(m)">
+              <mat-icon>person_remove</mat-icon>
+            </button>
+          }
         </td>
       </ng-container>
 

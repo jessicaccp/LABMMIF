@@ -9,18 +9,19 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatOption } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
-import { ProjectStatus, Research } from '../../../core/models';
+import { LabMembership, ProjectStatus, Research } from '../../../core/models';
 import { ProjectService } from '../../../core/services/project.service';
 
 export interface ProjectFormData {
   labId: number;
   research: Research[];
+  techLeads: LabMembership[];
 }
 
 @Component({
@@ -33,6 +34,7 @@ export interface ProjectFormData {
     MatDialogActions,
     MatFormField,
     MatLabel,
+    MatHint,
     MatError,
     MatInput,
     MatSelect,
@@ -64,17 +66,19 @@ export class ProjectFormDialog {
     start_date: [''],
     end_date: [''],
     research_id: [null as number | null],
+    tech_lead_id: [null as number | null],
   });
 
   protected submit(): void {
     if (this.form.invalid) return;
     this.loading.set(true);
     this.error.set(null);
-    const { name, description, status, start_date, end_date, research_id } =
+    const { name, description, status, start_date, end_date, research_id, tech_lead_id } =
       this.form.getRawValue();
     this.projectService
       .create(this.data.labId, {
         name,
+        ...(tech_lead_id && { tech_lead_id }),
         ...(description && { description }),
         ...(status && { status }),
         ...(start_date && { start_date }),

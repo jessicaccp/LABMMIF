@@ -1,76 +1,138 @@
-<div class="auth-container">
-  <mat-card class="auth-card">
-    <mat-card-title>Create Account</mat-card-title>
+<div class="auth-bg">
+  <div class="terminal-window">
+    <div class="title-bar">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+      <span class="title-text">labmm — register@system</span>
+    </div>
 
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <div class="name-row">
-          <mat-form-field appearance="outline">
-            <mat-label>First Name</mat-label>
-            <input matInput formControlName="first_name" autocomplete="given-name" />
-            @if (form.get('first_name')?.hasError('required') && form.get('first_name')?.touched) {
-              <mat-error>Required</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Last Name</mat-label>
-            <input matInput formControlName="last_name" autocomplete="family-name" />
-            @if (form.get('last_name')?.hasError('required') && form.get('last_name')?.touched) {
-              <mat-error>Required</mat-error>
-            }
-          </mat-form-field>
+    <div class="window-body">
+      @if (pendingApproval()) {
+        <div class="pending-banner">
+          <mat-icon class="pending-icon">hourglass_top</mat-icon>
+          <h3>Account created — awaiting approval</h3>
+          <p>
+            Your registration was received. A professor of your selected lab
+            will review and approve your account. You will be able to sign in
+            once approved.
+          </p>
+          <a mat-raised-button color="primary" routerLink="/login">Go to Sign In</a>
         </div>
+      } @else {
+        <h2>
+          <span class="prompt">$</span>
+          @if (isLoggedIn()) { create-member } @else { register }
+          <span class="cursor"></span>
+        </h2>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" autocomplete="email" />
-          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
-            <mat-error>Email is required</mat-error>
-          } @else if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
-            <mat-error>Enter a valid email address</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Password</mat-label>
-          <input
-            matInput
-            type="password"
-            formControlName="password"
-            autocomplete="new-password"
-          />
-          @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
-            <mat-error>Password is required</mat-error>
-          } @else if (
-            form.get('password')?.hasError('minlength') && form.get('password')?.touched
-          ) {
-            <mat-error>Password must be at least 8 characters</mat-error>
-          }
-        </mat-form-field>
-
-        @if (error()) {
-          <p class="error-text">{{ error() }}</p>
+        @if (successEmail()) {
+          <div class="success-banner">
+            ✓ Account created for {{ successEmail() }}. You can create another below.
+          </div>
         }
 
-        <button
-          mat-raised-button
-          color="primary"
-          type="submit"
-          class="full-width"
-          [disabled]="loading()"
-        >
-          @if (loading()) {
-            <mat-progress-spinner diameter="20" mode="indeterminate" />
-          } @else {
-            Create Account
-          }
-        </button>
-      </form>
-    </mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="name-row">
+            <mat-form-field appearance="outline">
+              <mat-label>First Name</mat-label>
+              <input matInput formControlName="first_name" autocomplete="given-name" />
+              @if (form.get('first_name')?.hasError('required') && form.get('first_name')?.touched) {
+                <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
 
-    <mat-card-actions>
-      <a routerLink="/login">Already have an account? Sign in</a>
-    </mat-card-actions>
-  </mat-card>
+            <mat-form-field appearance="outline">
+              <mat-label>Last Name</mat-label>
+              <input matInput formControlName="last_name" autocomplete="family-name" />
+              @if (form.get('last_name')?.hasError('required') && form.get('last_name')?.touched) {
+                <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+              <mat-error>Email is required</mat-error>
+            } @else if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+              <mat-error>Enter a valid email address</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>CPF</mat-label>
+            <input matInput formControlName="cpf" placeholder="000.000.000-00" autocomplete="off" (input)="onCpfInput($event)" />
+            @if (form.get('cpf')?.hasError('required') && form.get('cpf')?.touched) {
+              <mat-error>CPF is required</mat-error>
+            } @else if (form.get('cpf')?.hasError('pattern') && form.get('cpf')?.touched) {
+              <mat-error>Enter a valid CPF (e.g. 000.000.000-00)</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Password</mat-label>
+            <input
+              matInput
+              type="password"
+              formControlName="password"
+              autocomplete="new-password"
+            />
+            @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
+              <mat-error>Password is required</mat-error>
+            } @else if (form.get('password')?.hasError('minlength') && form.get('password')?.touched) {
+              <mat-error>Password must be at least 8 characters</mat-error>
+            }
+          </mat-form-field>
+
+          @if (!isLoggedIn() && labs().length > 0) {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Laboratory</mat-label>
+              <mat-select formControlName="desired_lab_id">
+                <mat-option [value]="null">— Select a lab —</mat-option>
+                @for (lab of labs(); track lab.id) {
+                  <mat-option [value]="lab.id">{{ lab.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          <mat-checkbox formControlName="is_professor" class="professor-check">
+            I am a Professor
+          </mat-checkbox>
+
+          @if (error()) {
+            <p class="error-text">{{ error() }}</p>
+          }
+
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            class="submit-btn"
+            [disabled]="loading()"
+          >
+            @if (loading()) {
+              <mat-progress-spinner diameter="20" mode="indeterminate" />
+            } @else if (isLoggedIn()) {
+              Create Member Account
+            } @else {
+              Create Account
+            }
+          </button>
+        </form>
+      }
+    </div>
+
+    @if (!isLoggedIn() && !pendingApproval()) {
+      <mat-card-actions>
+        <a routerLink="/login">Already have an account? Sign in</a>
+      </mat-card-actions>
+    } @else if (isLoggedIn()) {
+      <mat-card-actions>
+        <a routerLink="/labs">← Back to Labs</a>
+      </mat-card-actions>
+    }
+  </div>
 </div>

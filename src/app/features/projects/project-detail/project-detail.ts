@@ -1,5 +1,5 @@
 import { DatePipe, TitleCasePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -25,8 +25,9 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 
-import { Member, Project } from '../../../core/models';
+import { LabMembership, LabRole, MANAGER_ROLES, Member, Project } from '../../../core/models';
 import { AuthService } from '../../../core/auth/auth.service';
+import { MemberService } from '../../../core/services/member.service';
 import { ProjectService } from '../../../core/services/project.service';
 import {
   ConfirmDialog,
@@ -69,10 +70,12 @@ export class ProjectDetail implements OnInit {
   protected readonly project = signal<Project | null>(null);
   protected readonly loading = signal(true);
   protected readonly addMemberId = signal('');
+  protected readonly currentMembership = signal<LabMembership | null>(null);
 
   protected readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly memberService = inject(MemberService);
   private readonly projectService = inject(ProjectService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -82,10 +85,30 @@ export class ProjectDetail implements OnInit {
 
   readonly memberColumns = ['name', 'email', 'actions'];
 
+  protected readonly canManageMembers = computed(() => {
+    if (this.authService.currentUser()?.is_super_admin) return true;
+    const m = this.currentMembership();
+    if (!m) return false;
+    return (
+      m.role === LabRole.CEO ||
+      m.role === LabRole.ENGINEERING_MANAGER ||
+      m.role === LabRole.PROJECT_MANAGER
+    );
+  });
+
   ngOnInit(): void {
     this.labId = Number(this.route.snapshot.paramMap.get('labId'));
     this.projectId = Number(this.route.snapshot.paramMap.get('projectId'));
     this.load();
+    // Load current user's lab membership to determine permissions
+    this.memberService.getLabMembers(this.labId).subscribe({
+      next: memberships => {
+        const userId = this.authService.currentUser()?.id;
+        if (userId) {
+          this.currentMembership.set(memberships.find(m => m.member_id === userId) ?? null);
+        }
+      },
+    });
   }
 
   protected load(): void {

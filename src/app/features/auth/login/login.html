@@ -1,8 +1,15 @@
-<div class="auth-container">
-  <mat-card class="auth-card">
-    <mat-card-title>Sign In</mat-card-title>
+<div class="auth-bg">
+  <div class="terminal-window">
+    <div class="title-bar">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+      <span class="title-text">labmm — auth@system</span>
+    </div>
 
-    <mat-card-content>
+    <div class="window-body">
+      <h2><span class="prompt">$</span> authenticate<span class="cursor"></span></h2>
+
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Email</mat-label>
@@ -35,7 +42,7 @@
           mat-raised-button
           color="primary"
           type="submit"
-          class="full-width"
+          class="submit-btn"
           [disabled]="loading()"
         >
           @if (loading()) {
@@ -45,10 +52,10 @@
           }
         </button>
       </form>
-    </mat-card-content>
+    </div>
 
     <mat-card-actions>
       <a routerLink="/register">Don't have an account? Register</a>
     </mat-card-actions>
-  </mat-card>
+  </div>
 </div>

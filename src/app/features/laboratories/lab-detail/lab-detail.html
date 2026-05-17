@@ -23,7 +23,7 @@
       <!-- ── Members ── -->
       <mat-tab label="Members">
         <div class="tab-content">
-          @if (isManager()) {
+          @if (isCeo()) {
             <div class="tab-actions">
               <button mat-raised-button color="primary" (click)="openAddMember()">
                 <mat-icon>person_add</mat-icon>
@@ -53,6 +53,11 @@
               </td>
             </ng-container>
 
+            <ng-container matColumnDef="specialization">
+              <th mat-header-cell *matHeaderCellDef>Specialization</th>
+              <td mat-cell *matCellDef="let m">{{ m.specialization || '—' }}</td>
+            </ng-container>
+
             <ng-container matColumnDef="compensation">
               <th mat-header-cell *matHeaderCellDef>Compensation</th>
               <td mat-cell *matCellDef="let m">
@@ -68,7 +73,7 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let m">
-                @if (isManager()) {
+                @if (isCeo()) {
                   <button
                     mat-icon-button
                     color="warn"
@@ -146,6 +151,14 @@
                 @if (isManager()) {
                   <button
                     mat-icon-button
+                    [color]="p.is_active ? 'warn' : 'primary'"
+                    [matTooltip]="p.is_active ? 'Deactivate project' : 'Activate project'"
+                    (click)="toggleProject(p)"
+                  >
+                    <mat-icon>{{ p.is_active ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
                     color="warn"
                     matTooltip="Delete project"
                     (click)="deleteProject(p.id, p.name)"
@@ -170,7 +183,7 @@
       <!-- ── Research ── -->
       <mat-tab label="Research Groups">
         <div class="tab-content">
-          @if (isManager()) {
+          @if (isChiefScientist()) {
             <div class="tab-actions">
               <button mat-raised-button color="primary" (click)="openAddResearch()">
                 <mat-icon>add</mat-icon>
@@ -205,7 +218,15 @@
                 >
                   <mat-icon>open_in_new</mat-icon>
                 </a>
-                @if (isManager()) {
+                @if (isChiefScientist()) {
+                  <button
+                    mat-icon-button
+                    [color]="r.is_active ? 'warn' : 'primary'"
+                    [matTooltip]="r.is_active ? 'Deactivate research group' : 'Activate research group'"
+                    (click)="toggleResearch(r)"
+                  >
+                    <mat-icon>{{ r.is_active ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
                   <button
                     mat-icon-button
                     color="warn"
@@ -279,7 +300,15 @@
                 >
                   <mat-icon>open_in_new</mat-icon>
                 </a>
-                @if (isManager()) {
+                @if (isChiefScientist()) {
+                  <button
+                    mat-icon-button
+                    [color]="a.is_active ? 'warn' : 'primary'"
+                    [matTooltip]="a.is_active ? 'Deactivate article' : 'Activate article'"
+                    (click)="toggleArticle(a)"
+                  >
+                    <mat-icon>{{ a.is_active ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
                   <button
                     mat-icon-button
                     color="warn"

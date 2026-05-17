@@ -48,6 +48,21 @@
       </mat-form-field>
     }
 
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Tech Lead</mat-label>
+      <mat-select formControlName="tech_lead_id">
+        <mat-option [value]="null">— None —</mat-option>
+        @for (tl of data.techLeads; track tl.member_id) {
+          <mat-option [value]="tl.member_id">
+            {{ tl.member?.first_name }} {{ tl.member?.last_name }}
+          </mat-option>
+        }
+      </mat-select>
+      @if (data.techLeads.length === 0) {
+        <mat-hint>No Tech Lead members found — add a member with Tech Lead role first</mat-hint>
+      }
+    </mat-form-field>
+
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }

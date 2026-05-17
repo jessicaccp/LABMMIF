@@ -55,4 +55,16 @@ export class ArticleService {
       { member_id: memberId },
     );
   }
+
+  deactivate(labId: number, articleId: number): Observable<Article> {
+    return this.http.post<Article>(
+      `${this.api}/labs/${labId}/articles/${articleId}/deactivate`, {},
+    );
+  }
+
+  activate(labId: number, articleId: number): Observable<Article> {
+    return this.http.post<Article>(
+      `${this.api}/labs/${labId}/articles/${articleId}/activate`, {},
+    );
+  }
 }

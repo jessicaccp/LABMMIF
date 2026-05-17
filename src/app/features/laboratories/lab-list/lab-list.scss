@@ -27,6 +27,18 @@
   &:hover {
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
   }
+
+  &.lab-inactive {
+    opacity: 0.65;
+  }
+}
+
+.chip-inactive {
+  background: rgba(255, 123, 114, 0.15) !important;
+  color: #ff7b72 !important;
+  font-size: 11px !important;
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 .spinner-center {
@@ -37,6 +49,31 @@
 
 .empty-state {
   text-align: center;
-  color: rgba(0, 0, 0, 0.54);
+  color: var(--mat-sys-on-surface-variant);
   padding: 48px;
+}
+
+.section-title {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+
+  & + .lab-grid + & {
+    margin-top: 40px;
+  }
+}
+
+.section-title ~ .section-title {
+  margin-top: 40px;
+}
+
+.chip-member {
+  background: rgba(0, 229, 255, 0.12) !important;
+  color: var(--mat-sys-primary) !important;
+  font-size: 11px !important;
+  margin-left: 8px;
+  vertical-align: middle;
 }
