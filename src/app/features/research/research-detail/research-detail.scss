@@ -12,7 +12,7 @@
 h1 { margin: 0 0 8px; }
 
 .description {
-  color: rgba(0,0,0,.6);
+  color: var(--mat-sys-on-surface-variant);
   margin: 0 0 32px;
 }
 
@@ -34,5 +34,5 @@ h1 { margin: 0 0 8px; }
 .empty-cell {
   text-align: center;
   padding: 32px !important;
-  color: rgba(0,0,0,.54);
+  color: var(--mat-sys-on-surface-variant);
 }
