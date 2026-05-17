@@ -15,11 +15,12 @@ import { MatOption } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
-import { CompensationType, LabRole, LAB_ROLE_LABELS, Member } from '../../../core/models';
+import { CompensationType, LabRole, LAB_ROLE_LABELS, ROLE_LEVEL, Member } from '../../../core/models';
 import { MemberService } from '../../../core/services/member.service';
 
 export interface MemberFormData {
   labId: number;
+  requesterRoleLevel: number;
 }
 
 @Component({
@@ -52,10 +53,12 @@ export class MemberFormDialog {
   protected readonly foundMember = signal<Member | null>(null);
   protected readonly lookupError = signal<string | null>(null);
 
-  protected readonly roles = Object.entries(LAB_ROLE_LABELS).map(([value, label]) => ({
-    value: value as LabRole,
-    label,
-  }));
+  protected readonly roles = Object.entries(LAB_ROLE_LABELS)
+    .filter(([v]) => (ROLE_LEVEL[v as LabRole] ?? 99) > this.data.requesterRoleLevel)
+    .map(([value, label]) => ({
+      value: value as LabRole,
+      label,
+    }));
 
   protected readonly compensationTypes = [
     { value: CompensationType.PROJECT_SALARY, label: 'Project Salary' },

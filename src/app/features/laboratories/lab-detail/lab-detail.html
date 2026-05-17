@@ -29,7 +29,7 @@
       <!-- ── Members ── -->
       <mat-tab label="Members">
         <div class="tab-content">
-          @if (isCeo()) {
+          @if (canAddMember()) {
             <div class="tab-actions">
               <button mat-raised-button color="primary" (click)="openAddMember()">
                 <mat-icon>person_add</mat-icon>
@@ -79,7 +79,7 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let m">
-                @if (isCeo() && m.member_id !== authService.currentUser()?.id) {
+                @if (canManage(m) && m.member_id !== authService.currentUser()?.id) {
                   <button
                     mat-icon-button
                     color="warn"

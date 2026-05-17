@@ -30,6 +30,7 @@ import {
   Project,
   Research,
   RESEARCHER_AND_ABOVE,
+  ROLE_LEVEL,
   TECH_LEAD_AND_ABOVE,
 } from '../../../core/models';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -138,6 +139,21 @@ export class LabDetail implements OnInit {
     return m ? RESEARCHER_AND_ABOVE.includes(m.role) : false;
   });
 
+  protected readonly currentLevel = computed(() =>
+    ROLE_LEVEL[this.currentMembership()?.role as LabRole] ?? 99
+  );
+
+  protected canManage(m: LabMembership): boolean {
+    if (this.isSuperAdmin()) return true;
+    const myLevel = this.currentLevel();
+    const targetLevel = ROLE_LEVEL[m.role as LabRole] ?? 99;
+    return myLevel < targetLevel;
+  }
+
+  protected readonly canAddMember = computed(() =>
+    this.isSuperAdmin() || this.currentLevel() < 4
+  );
+
   readonly memberColumns = ['name', 'email', 'role', 'specialization', 'compensation', 'actions'];
   readonly projectColumns = ['name', 'status', 'start_date', 'end_date', 'actions'];
   readonly researchColumns = ['name', 'description', 'members', 'actions'];
@@ -186,7 +202,7 @@ export class LabDetail implements OnInit {
   protected openAddMember(): void {
     const ref = this.dialog.open(MemberFormDialog, {
       width: '520px',
-      data: { labId: this.labId },
+      data: { labId: this.labId, requesterRoleLevel: this.currentLevel() },
     });
     ref.afterClosed().subscribe(added => {
       if (added) {
