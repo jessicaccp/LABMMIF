@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatButton, MatIconButton } from '@angular/material/button';
+import { environment } from '../../../../environments/environment';
 import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
@@ -58,12 +59,14 @@ export class PendingMembers implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
 
+  protected readonly isDevMode = !environment.production;
   protected readonly loading = signal(true);
   protected readonly loadingAll = signal(true);
   protected readonly pending = signal<Member[]>([]);
   protected readonly allMembers = signal<Member[]>([]);
   protected readonly approving = signal<Set<number>>(new Set());
   protected readonly toggling = signal<Set<number>>(new Set());
+  protected readonly resetting = signal(false);
 
   protected readonly pendingColumns = ['name', 'email', 'cpf', 'desired_lab', 'registered', 'actions'];
   protected readonly allColumns = ['name', 'email', 'cpf', 'role', 'status', 'registered', 'actions'];
@@ -120,6 +123,22 @@ export class PendingMembers implements OnInit {
 
   private setToggling(id: number, on: boolean): void {
     this.toggling.update(s => { const n = new Set(s); on ? n.add(id) : n.delete(id); return n; });
+  }
+
+  protected resetDb(): void {
+    if (!confirm('Reset the database? All data will be wiped and re-seeded.')) return;
+    this.resetting.set(true);
+    this.memberService.debugResetDb().subscribe({
+      next: () => {
+        this.resetting.set(false);
+        this.snackBar.open('Database reset. Reload the page.', 'Reload', { duration: 8000 })
+          .onAction().subscribe(() => location.reload());
+      },
+      error: () => {
+        this.resetting.set(false);
+        this.snackBar.open('DB reset failed — check backend logs.', 'Dismiss', { duration: 6000 });
+      },
+    });
   }
 
   protected formatCpf(cpf: string | null | undefined): string {

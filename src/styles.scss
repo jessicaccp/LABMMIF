@@ -33,6 +33,12 @@ body {
 }
 /* You can add global styles to this file, and also import other style files */
 
+/* Ensure routed component host elements fill the viewport width so margin: auto centering works */
+.main-content > * {
+  display: block;
+  width: 100%;
+}
+
 mat-dialog-content {
   padding-top: 8px !important;
 }

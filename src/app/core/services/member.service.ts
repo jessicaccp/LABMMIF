@@ -92,4 +92,8 @@ export class MemberService {
   activateMember(memberId: number): Observable<Member> {
     return this.http.post<Member>(`${this.api}/members/${memberId}/activate`, {});
   }
+
+  debugResetDb(): Observable<{ ok: boolean; stdout?: string }> {
+    return this.http.post<{ ok: boolean; stdout?: string }>(`${this.api}/debug/reset-db`, {});
+  }
 }
