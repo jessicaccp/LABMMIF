@@ -1,0 +1,59 @@
+<div class="page-container">
+  <a mat-button [routerLink]="['/labs', labId]" class="back-link">
+    <mat-icon>arrow_back</mat-icon>
+    Back to Lab
+  </a>
+
+  <h1>Published Articles</h1>
+
+  @if (loading()) {
+    <div class="spinner-center">
+      <mat-progress-spinner mode="indeterminate" />
+    </div>
+  } @else if (articles().length === 0) {
+    <p class="empty-state">No published articles yet.</p>
+  } @else {
+    <div class="articles-list">
+      @for (article of articles(); track article.id) {
+        <div class="article-card">
+          <h2>
+            <a [routerLink]="['/labs', labId, 'articles', article.id]">{{ article.title }}</a>
+          </h2>
+
+          <div class="meta">
+            @if (article.conference) {
+              <span><strong>Conference / Journal:</strong> {{ article.conference }}</span>
+            }
+            @if (article.doi) {
+              <span>
+                <strong>DOI:</strong>
+                <a [href]="'https://doi.org/' + article.doi" target="_blank" rel="noopener">
+                  {{ article.doi }}
+                </a>
+              </span>
+            }
+            @if (article.published_at) {
+              <span>
+                <strong>Published:</strong> {{ article.published_at | date: 'longDate' }}
+              </span>
+            }
+            @if (article.in_charge && article.in_charge.length > 0) {
+              <span>
+                <strong>In Charge:</strong> {{ article.in_charge.join(', ') }}
+              </span>
+            }
+            @if (article.authors && article.authors.length > 0) {
+              <span>
+                <strong>Authors:</strong> {{ article.authors.join(', ') }}
+              </span>
+            }
+          </div>
+
+          @if (article.abstract) {
+            <p class="abstract">{{ article.abstract }}</p>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -45,6 +45,11 @@ export const routes: Routes = [
       import('./features/research/research-detail/research-detail').then(m => m.ResearchDetail),
   },
   {
+    path: 'labs/:labId/articles',
+    loadComponent: () =>
+      import('./features/articles/articles-public/articles-public').then(m => m.ArticlesPublic),
+  },
+  {
     path: 'labs/:labId/articles/new',
     canActivate: [authGuard],
     loadComponent: () =>

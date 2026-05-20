@@ -25,7 +25,11 @@
     </div>
 
     <!-- Tabs -->
-    <mat-tab-group animationDuration="200ms">
+    <mat-tab-group
+      animationDuration="200ms"
+      [selectedIndex]="selectedTabIndex"
+      (selectedTabChange)="onTabChange($event.index)"
+    >
       <!-- ── Members ── -->
       <mat-tab label="Members">
         <div class="tab-content">
@@ -277,32 +281,60 @@
             </div>
           }
 
-          <table mat-table [dataSource]="articles()" class="full-width">
+          <table mat-table [dataSource]="articlesDataSource" matSort #articleSort="matSort" class="full-width">
             <ng-container matColumnDef="title">
-              <th mat-header-cell *matHeaderCellDef>Title</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
               <td mat-cell *matCellDef="let a">{{ a.title }}</td>
             </ng-container>
 
-            <ng-container matColumnDef="journal">
-              <th mat-header-cell *matHeaderCellDef>Journal</th>
-              <td mat-cell *matCellDef="let a">{{ a.journal || '—' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="doi">
-              <th mat-header-cell *matHeaderCellDef>DOI</th>
-              <td mat-cell *matCellDef="let a">{{ a.doi || '—' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="published_at">
-              <th mat-header-cell *matHeaderCellDef>Published</th>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
               <td mat-cell *matCellDef="let a">
-                {{ a.published_at ? (a.published_at | date: 'mediumDate') : '—' }}
+                @if (isResearcher()) {
+                  <mat-select
+                    [value]="a.status"
+                    (selectionChange)="changeArticleStatus(a, $event.value)"
+                    class="status-select"
+                  >
+                    <mat-select-trigger>
+                      <span [class]="'status-chip status-' + a.status">
+                        {{ articleStatusLabel(a.status) }}
+                      </span>
+                    </mat-select-trigger>
+                    @for (s of articleStatuses; track s) {
+                      <mat-option [value]="s">
+                        <span [class]="'status-chip status-' + s">{{ articleStatusLabel(s) }}</span>
+                      </mat-option>
+                    }
+                  </mat-select>
+                } @else {
+                  <span [class]="'status-chip status-' + a.status">
+                    {{ articleStatusLabel(a.status) }}
+                  </span>
+                }
               </td>
+            </ng-container>
+
+            <ng-container matColumnDef="conference">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Conference / Journal</th>
+              <td mat-cell *matCellDef="let a">{{ a.conference || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="submission_deadline">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Deadline</th>
+              <td mat-cell *matCellDef="let a">
+                {{ a.submission_deadline ? (a.submission_deadline | date: 'mediumDate') : '—' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="in_charge">
+              <th mat-header-cell *matHeaderCellDef>In Charge</th>
+              <td mat-cell *matCellDef="let a">{{ a.in_charge?.join(', ') || '—' }}</td>
             </ng-container>
 
             <ng-container matColumnDef="authors">
               <th mat-header-cell *matHeaderCellDef>Authors</th>
-              <td mat-cell *matCellDef="let a">{{ a.authors?.length ?? 0 }}</td>
+              <td mat-cell *matCellDef="let a">{{ a.authors?.join(', ') || '—' }}</td>
             </ng-container>
 
             <ng-container matColumnDef="actions">
@@ -346,6 +378,94 @@
           </table>
         </div>
       </mat-tab>
+
+      <!-- ── Inventory ── -->
+      <mat-tab label="Inventory">
+        <div class="tab-content">
+          @if (isManager()) {
+            <div class="tab-actions">
+              <button mat-raised-button color="primary" (click)="openAddInventoryItem()">
+                <mat-icon>add</mat-icon>
+                Add Item
+              </button>
+            </div>
+          }
+
+          <table mat-table [dataSource]="inventory()" class="full-width">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let i">{{ i.name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef>Category</th>
+              <td mat-cell *matCellDef="let i">{{ i.category }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef>Qty</th>
+              <td mat-cell *matCellDef="let i">{{ i.quantity }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="condition">
+              <th mat-header-cell *matHeaderCellDef>Condition</th>
+              <td mat-cell *matCellDef="let i">
+                <span [class]="'condition-chip condition-' + i.condition">
+                  {{ itemConditionLabel(i.condition) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="serial_number">
+              <th mat-header-cell *matHeaderCellDef>Serial #</th>
+              <td mat-cell *matCellDef="let i">{{ i.serial_number || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="assigned_to">
+              <th mat-header-cell *matHeaderCellDef>Assigned To</th>
+              <td mat-cell *matCellDef="let i">
+                @if (i.assigned_to) {
+                  {{ i.assigned_to.first_name }} {{ i.assigned_to.last_name }}
+                } @else {
+                  —
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let i">
+                @if (isManager()) {
+                  <button
+                    mat-icon-button
+                    matTooltip="Edit item"
+                    (click)="openEditInventoryItem(i)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    matTooltip="Delete item"
+                    (click)="deleteInventoryItem(i.id, i.name)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="inventoryColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: inventoryColumns"></tr>
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell empty-cell" [attr.colspan]="inventoryColumns.length">
+                No inventory items yet.
+              </td>
+            </tr>
+          </table>
+        </div>
+      </mat-tab>
+
     </mat-tab-group>
   }
 </div>

@@ -13,6 +13,10 @@ mat-card {
   padding: 24px;
 }
 
+mat-card mat-card-content {
+  padding-top: 16px !important;
+}
+
 .full-width {
   width: 100%;
   display: block;

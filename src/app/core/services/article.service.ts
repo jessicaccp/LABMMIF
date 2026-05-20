@@ -3,14 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Article } from '../models';
+import { Article, ArticleStatus } from '../models';
 
 export interface CreateArticlePayload {
   title: string;
   abstract?: string;
-  journal?: string;
+  conference?: string;
   doi?: string;
+  status?: ArticleStatus;
+  submission_deadline?: string;
   published_at?: string;
+  authors?: string[];
+  in_charge?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -20,6 +24,12 @@ export class ArticleService {
 
   getAll(labId: number): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.api}/labs/${labId}/articles`);
+  }
+
+  getPublished(labId: number): Observable<Article[]> {
+    return this.http.get<Article[]>(
+      `${this.api}/labs/${labId}/articles?published_only=true`,
+    );
   }
 
   getById(labId: number, articleId: number): Observable<Article> {
@@ -46,13 +56,6 @@ export class ArticleService {
   delete(labId: number, articleId: number): Observable<void> {
     return this.http.delete<void>(
       `${this.api}/labs/${labId}/articles/${articleId}`,
-    );
-  }
-
-  addAuthor(labId: number, articleId: number, memberId: number): Observable<Article> {
-    return this.http.post<Article>(
-      `${this.api}/labs/${labId}/articles/${articleId}/authors`,
-      { member_id: memberId },
     );
   }
 

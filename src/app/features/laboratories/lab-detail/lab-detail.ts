@@ -1,11 +1,14 @@
 import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatOption } from '@angular/material/core';
+import { MatSelect, MatSelectTrigger } from '@angular/material/select';
+import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import {
   MatCellDef,
@@ -19,11 +22,17 @@ import {
   MatCell,
   MatHeaderRow,
   MatRow,
+  MatTableDataSource,
 } from '@angular/material/table';
 import { MatTooltip } from '@angular/material/tooltip';
 
 import {
   Article,
+  ARTICLE_STATUS_LABELS,
+  ArticleStatus,
+  InventoryItem,
+  ItemCondition,
+  ITEM_CONDITION_LABELS,
   LabMembership,
   LabRole,
   MANAGER_ROLES,
@@ -35,6 +44,7 @@ import {
 } from '../../../core/models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ArticleService } from '../../../core/services/article.service';
+import { InventoryService } from '../../../core/services/inventory.service';
 import { LaboratoryService } from '../../../core/services/laboratory.service';
 import { MemberService } from '../../../core/services/member.service';
 import { ProjectService } from '../../../core/services/project.service';
@@ -48,6 +58,7 @@ import { EditMemberDialog, EditMemberData } from './edit-member-dialog';
 import { MemberFormDialog } from './member-form-dialog';
 import { ProjectFormDialog } from './project-form-dialog';
 import { ResearchFormDialog } from './research-form-dialog';
+import { InventoryFormDialog, InventoryFormData } from './inventory-form-dialog';
 import { Laboratory } from '../../../core/models';
 
 @Component({
@@ -70,6 +81,11 @@ import { Laboratory } from '../../../core/models';
     MatRow,
     MatRowDef,
     MatNoDataRow,
+    MatSort,
+    MatSortHeader,
+    MatOption,
+    MatSelect,
+    MatSelectTrigger,
     MatButton,
     MatIconButton,
     MatIcon,
@@ -80,13 +96,17 @@ import { Laboratory } from '../../../core/models';
   templateUrl: './lab-detail.html',
   styleUrl: './lab-detail.scss',
 })
-export class LabDetail implements OnInit {
+export class LabDetail implements OnInit, AfterViewInit {
+  @ViewChild('articleSort') articleSort!: MatSort;
+
   protected readonly lab = signal<Laboratory | null>(null);
   protected readonly members = signal<LabMembership[]>([]);
   protected readonly projects = signal<Project[]>([]);
   protected readonly research = signal<Research[]>([]);
-  protected readonly articles = signal<Article[]>([]);
+  protected readonly articlesDataSource = new MatTableDataSource<Article>([]);
+  protected readonly inventory = signal<InventoryItem[]>([]);
   protected readonly loading = signal(true);
+  protected selectedTabIndex = 0;
   protected readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -95,10 +115,23 @@ export class LabDetail implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly researchService = inject(ResearchService);
   private readonly articleService = inject(ArticleService);
+  private readonly inventoryService = inject(InventoryService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
 
   protected labId = 0;
+
+  protected readonly articleStatusLabels = ARTICLE_STATUS_LABELS;
+  protected readonly itemConditionLabels = ITEM_CONDITION_LABELS;
+  protected readonly articleStatuses = Object.values(ArticleStatus);
+
+  protected articleStatusLabel(status: string): string {
+    return ARTICLE_STATUS_LABELS[status as ArticleStatus] ?? status;
+  }
+
+  protected itemConditionLabel(condition: string): string {
+    return ITEM_CONDITION_LABELS[condition as ItemCondition] ?? condition;
+  }
 
   protected readonly isSuperAdmin = computed(
     () => this.authService.currentUser()?.is_super_admin ?? false,
@@ -162,11 +195,52 @@ export class LabDetail implements OnInit {
   readonly memberColumns = ['name', 'email', 'role', 'specialization', 'compensation', 'actions'];
   readonly projectColumns = ['name', 'status', 'start_date', 'end_date', 'actions'];
   readonly researchColumns = ['name', 'description', 'members', 'actions'];
-  readonly articleColumns = ['title', 'journal', 'doi', 'published_at', 'authors', 'actions'];
+  readonly articleColumns = ['title', 'status', 'conference', 'submission_deadline', 'in_charge', 'authors', 'actions'];
+  readonly inventoryColumns = ['name', 'category', 'quantity', 'condition', 'serial_number', 'assigned_to', 'actions'];
+
+  // Tab index constants
+  static readonly TAB_ARTICLES = 3;
 
   ngOnInit(): void {
     this.labId = Number(this.route.snapshot.paramMap.get('labId'));
+    // FIX 3: Restore tab from query param
+    const tabParam = this.route.snapshot.queryParamMap.get('tab');
+    if (tabParam !== null) {
+      this.selectedTabIndex = Number(tabParam);
+    }
     this.loadAll();
+  }
+
+  ngAfterViewInit(): void {
+    // FIX 1: If the articles tab is already selected on load (e.g. via ?tab=3),
+    // attach sort after the tab content has had time to render.
+    if (this.selectedTabIndex === LabDetail.TAB_ARTICLES) {
+      this.attachSortWithRetry();
+    }
+  }
+
+  private attachSortWithRetry(attempts = 0): void {
+    if (this.articleSort) {
+      this.articlesDataSource.sort = this.articleSort;
+    } else if (attempts < 10) {
+      setTimeout(() => this.attachSortWithRetry(attempts + 1), 50);
+    }
+  }
+
+  // FIX 1 + FIX 3: Called by (selectedTabChange) on MatTabGroup
+  protected onTabChange(index: number): void {
+    this.selectedTabIndex = index;
+    // Persist tab in URL without navigation
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: index },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    // Re-attach sort when articles tab (index 3) becomes active
+    if (index === LabDetail.TAB_ARTICLES) {
+      this.attachSortWithRetry();
+    }
   }
 
   protected loadAll(): void {
@@ -198,7 +272,13 @@ export class LabDetail implements OnInit {
     });
 
     this.articleService.getAll(this.labId).subscribe({
-      next: articles => this.articles.set(articles),
+      next: articles => {
+        this.articlesDataSource.data = articles;
+      },
+    });
+
+    this.inventoryService.getAll(this.labId).subscribe({
+      next: items => this.inventory.set(items),
     });
   }
 
@@ -344,6 +424,17 @@ export class LabDetail implements OnInit {
 
   // ─── Articles ──────────────────────────────────────────────────────────────
 
+  protected changeArticleStatus(article: Article, newStatus: ArticleStatus): void {
+    this.articleService.update(this.labId, article.id, { status: newStatus }).subscribe({
+      next: updated => {
+        this.articlesDataSource.data = this.articlesDataSource.data.map(a =>
+          a.id === updated.id ? updated : a
+        );
+      },
+      error: () => this.snackBar.open('Failed to update status', 'Dismiss', { duration: 3000 }),
+    });
+  }
+
   protected deleteArticle(articleId: number, title: string): void {
     const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData>(ConfirmDialog, {
       data: { title: 'Delete Article', message: `Delete "${title}"?` },
@@ -352,7 +443,7 @@ export class LabDetail implements OnInit {
       if (!confirmed) return;
       this.articleService.delete(this.labId, articleId).subscribe({
         next: () => {
-          this.articles.update(as => as.filter(a => a.id !== articleId));
+          this.articlesDataSource.data = this.articlesDataSource.data.filter(a => a.id !== articleId);
           this.snackBar.open('Article deleted', 'Dismiss', { duration: 2000 });
         },
         error: () => this.snackBar.open('Failed to delete article', 'Dismiss', { duration: 3000 }),
@@ -366,10 +457,56 @@ export class LabDetail implements OnInit {
       : this.articleService.activate(this.labId, article.id);
     call.subscribe({
       next: updated => {
-        this.articles.update(as => as.map(a => a.id === article.id ? updated : a));
+        this.articlesDataSource.data = this.articlesDataSource.data.map(a =>
+          a.id === article.id ? updated : a
+        );
         this.snackBar.open(`Article ${updated.is_active ? 'activated' : 'deactivated'}.`, 'Dismiss', { duration: 2000 });
       },
       error: () => this.snackBar.open('Failed to update article status.', 'Dismiss', { duration: 3000 }),
+    });
+  }
+
+  // ─── Inventory ─────────────────────────────────────────────────────────────
+
+  protected openAddInventoryItem(): void {
+    const ref = this.dialog.open<InventoryFormDialog, InventoryFormData, InventoryItem>(
+      InventoryFormDialog,
+      { width: '520px', data: { labId: this.labId } },
+    );
+    ref.afterClosed().subscribe(created => {
+      if (created) {
+        this.inventory.update(items => [...items, created]);
+        this.snackBar.open('Item added', 'Dismiss', { duration: 2000 });
+      }
+    });
+  }
+
+  protected openEditInventoryItem(item: InventoryItem): void {
+    const ref = this.dialog.open<InventoryFormDialog, InventoryFormData, InventoryItem>(
+      InventoryFormDialog,
+      { width: '520px', data: { labId: this.labId, item } },
+    );
+    ref.afterClosed().subscribe(updated => {
+      if (updated) {
+        this.inventory.update(items => items.map(i => i.id === updated.id ? updated : i));
+        this.snackBar.open('Item updated', 'Dismiss', { duration: 2000 });
+      }
+    });
+  }
+
+  protected deleteInventoryItem(itemId: number, name: string): void {
+    const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData>(ConfirmDialog, {
+      data: { title: 'Delete Item', message: `Delete "${name}" from inventory?` },
+    });
+    ref.afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.inventoryService.delete(this.labId, itemId).subscribe({
+        next: () => {
+          this.inventory.update(items => items.filter(i => i.id !== itemId));
+          this.snackBar.open('Item deleted', 'Dismiss', { duration: 2000 });
+        },
+        error: () => this.snackBar.open('Failed to delete item', 'Dismiss', { duration: 3000 }),
+      });
     });
   }
 

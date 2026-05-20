@@ -30,6 +30,90 @@ body {
 
 :root {
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+  // ── Article status chip colours — dark theme (default) ─────────────────
+  --status-in-progress-bg:  #1e3a5f;
+  --status-in-progress-fg:  #93c5fd;
+
+  --status-under-review-bg: #422006;
+  --status-under-review-fg: #fcd34d;
+
+  --status-submitted-bg:    #0c3b42;
+  --status-submitted-fg:    #67e8f9;
+
+  --status-accepted-bg:     #14532d;
+  --status-accepted-fg:     #86efac;
+
+  --status-rejected-bg:     #450a0a;
+  --status-rejected-fg:     #fca5a5;
+
+  --status-withdrawn-bg:    #1f2937;
+  --status-withdrawn-fg:    #9ca3af;
+
+  --status-published-bg:    #0d3330;
+  --status-published-fg:    #5eead4;
+}
+
+// ── Article status chip colours — light theme override ──────────────────
+body.light-theme {
+  --status-in-progress-bg:  #dbeafe;
+  --status-in-progress-fg:  #1d4ed8;
+
+  --status-under-review-bg: #fef3c7;
+  --status-under-review-fg: #92400e;
+
+  --status-submitted-bg:    #cffafe;
+  --status-submitted-fg:    #0e7490;
+
+  --status-accepted-bg:     #dcfce7;
+  --status-accepted-fg:     #15803d;
+
+  --status-rejected-bg:     #fee2e2;
+  --status-rejected-fg:     #b91c1c;
+
+  --status-withdrawn-bg:    #f3f4f6;
+  --status-withdrawn-fg:    #4b5563;
+
+  --status-published-bg:    #ccfbf1;
+  --status-published-fg:    #0f766e;
+}
+
+// ── Article status chip — global styles (works across all components) ────
+.status-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.status-in_progress {
+    background: var(--status-in-progress-bg);
+    color: var(--status-in-progress-fg);
+  }
+  &.status-under_review {
+    background: var(--status-under-review-bg);
+    color: var(--status-under-review-fg);
+  }
+  &.status-submitted {
+    background: var(--status-submitted-bg);
+    color: var(--status-submitted-fg);
+  }
+  &.status-accepted {
+    background: var(--status-accepted-bg);
+    color: var(--status-accepted-fg);
+  }
+  &.status-rejected {
+    background: var(--status-rejected-bg);
+    color: var(--status-rejected-fg);
+  }
+  &.status-withdrawn {
+    background: var(--status-withdrawn-bg);
+    color: var(--status-withdrawn-fg);
+  }
+  &.status-published {
+    background: var(--status-published-bg);
+    color: var(--status-published-fg);
+  }
 }
 /* You can add global styles to this file, and also import other style files */
 

@@ -25,6 +25,24 @@ export enum ProjectStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum ArticleStatus {
+  IN_PROGRESS = 'in_progress',
+  UNDER_REVIEW = 'under_review',
+  SUBMITTED = 'submitted',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+  WITHDRAWN = 'withdrawn',
+  PUBLISHED = 'published',
+}
+
+export enum ItemCondition {
+  NEW = 'new',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+  BROKEN = 'broken',
+}
+
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
 export const MANAGER_ROLES: LabRole[] = [
@@ -68,6 +86,24 @@ export const ROLE_LEVEL: Record<LabRole, number> = {
   [LabRole.RESEARCHER]: 3,
   [LabRole.RESEARCH_FELLOW]: 3,
   [LabRole.STAFF]: 4,
+};
+
+export const ARTICLE_STATUS_LABELS: Record<ArticleStatus, string> = {
+  [ArticleStatus.IN_PROGRESS]: 'In Progress',
+  [ArticleStatus.UNDER_REVIEW]: 'Under Review',
+  [ArticleStatus.SUBMITTED]: 'Submitted',
+  [ArticleStatus.ACCEPTED]: 'Accepted',
+  [ArticleStatus.REJECTED]: 'Rejected',
+  [ArticleStatus.WITHDRAWN]: 'Withdrawn',
+  [ArticleStatus.PUBLISHED]: 'Published',
+};
+
+export const ITEM_CONDITION_LABELS: Record<ItemCondition, string> = {
+  [ItemCondition.NEW]: 'New',
+  [ItemCondition.GOOD]: 'Good',
+  [ItemCondition.FAIR]: 'Fair',
+  [ItemCondition.POOR]: 'Poor',
+  [ItemCondition.BROKEN]: 'Broken',
 };
 
 // ─── Entities ─────────────────────────────────────────────────────────────────
@@ -151,14 +187,31 @@ export interface Article {
   id: number;
   title: string;
   abstract: string | null;
-  journal: string | null;
+  conference: string | null;
   doi: string | null;
+  status: ArticleStatus;
+  submission_deadline: string | null;
   published_at: string | null;
+  authors: string[];
+  in_charge: string[];
   is_active: boolean;
   lab_id: number;
   created_at: string;
-  authors?: Member[];
   laboratory?: Laboratory;
+}
+
+export interface InventoryItem {
+  id: number;
+  name: string;
+  category: string;
+  description: string | null;
+  serial_number: string | null;
+  quantity: number;
+  condition: ItemCondition;
+  lab_id: number;
+  assigned_to_id: number | null;
+  created_at: string;
+  assigned_to?: Member | null;
 }
 
 // ─── Auth DTOs ────────────────────────────────────────────────────────────────
@@ -183,4 +236,3 @@ export interface RegisterRequest {
   is_professor?: boolean;
   desired_lab_id?: number;
 }
-
